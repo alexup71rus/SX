@@ -11,7 +11,6 @@ declare global {
 
 const config: Types.Core.GameConfig = {
   type: AUTO,
-  pixelArt: true,
   width: gameConfig.screenWidth,
   height: gameConfig.screenHeight,
   backgroundColor: gameConfig.backgroundColor,

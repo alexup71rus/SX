@@ -1,22 +1,21 @@
+const isMob = window.navigator.userAgent.toLowerCase().includes("mobi")
+let scaleRange = 1.5
+
+if (isMob) {
+  scaleRange = +(window.innerWidth / window.outerWidth).toFixed(3)
+}
+
 export default {
-  screenWidth: 340 * 3,
-  screenHeight: 220 * 3,
-  // screenWidth: 1366 * 3,
-  // screenHeight: 768 * 3,
-  backgroundColor: '#000000',
+  // @ts-ignore
+  scaleRange: scaleRange,
+  screenWidth: window.navigator.userAgent.toLowerCase().includes("mobi") ? window.innerWidth : 390 * scaleRange,
+  // @ts-ignore
+  screenHeight: window.navigator.userAgent.toLowerCase().includes("mobi") ? window.innerHeight : 844 * scaleRange,
+  backgroundColor: '#fff',
   physics: {
-    default: 'matter',
-    matter: {
-      gravity: { y: .5 },
-      debug: {
-        showBody: true,
-        showStaticBody: true
-      }
+    default: 'arcade',
+    arcade: {
+      debug: true
     },
-    // default: 'arcade',
-    // arcade: {
-    //   gravity: { y: 100 },
-    //   debug: true
-    // },
   },
 }

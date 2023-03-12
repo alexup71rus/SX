@@ -6,9 +6,15 @@ export class PreloadScene extends Scene {
   }
 
   preload() {
-    this.load.image('loc-home', '../assets/loc-home/home.png')
-    this.load.image('collision-map', '../assets/loc-home/collision-map.png')
-    this.load.image('player', '../assets/main-character/character.png')
+    this.load.svg('btn-attack', '../assets/inteface/bottom-panel/buttons/attack.svg')
+    this.load.svg('btn-block', '../assets/inteface/bottom-panel/buttons/block.svg')
+    this.load.svg('btn-jump', '../assets/inteface/bottom-panel/buttons/jump.svg')
+    this.load.svg('btn-kunai', '../assets/inteface/bottom-panel/buttons/kunai.svg')
+    this.load.svg('joystick-bg', '../assets/inteface/bottom-panel/joystick/bg.svg')
+    this.load.svg('joystick-stick', '../assets/inteface/bottom-panel/joystick/stick.svg')
+
+    // scene
+    this.load.svg('scene1', '../assets/loc-start/bg.svg')
   }
 
   create() {
