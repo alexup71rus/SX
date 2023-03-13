@@ -1,5 +1,5 @@
 const isMob = window.navigator.userAgent.toLowerCase().includes("mobi")
-let scaleRange = 1.5
+let scaleRange = 1
 
 if (isMob) {
   scaleRange = +(window.innerWidth / window.outerWidth).toFixed(3)

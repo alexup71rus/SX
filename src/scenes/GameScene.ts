@@ -221,7 +221,7 @@ export class GameScene extends Scene {
     this.backgroundSprite = this.add.image((this.gameWidth / 2), this.gameHeight / 2, 'scene1')
 
     this.gameSceneShape.fillStyle(0x000000)
-    this.gameSceneShape.fillRoundedRect(0, 0, this.gameWidth, this.gameHeight, 40)
+    this.gameSceneShape.fillRoundedRect(0, -10, this.gameWidth, this.gameHeight + 10, (40 * gameConfig.scaleRange))
 
     this.backgroundSprite.setMask(this.gameSceneShape.createGeometryMask())
   }
