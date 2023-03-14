@@ -15,6 +15,7 @@ export class PreloadScene extends Scene {
 
     // scene
     this.load.svg('scene1', '../assets/loc-start/bg.svg')
+    this.load.svg('player', '../assets/main-character/main.svg')
   }
 
   create() {

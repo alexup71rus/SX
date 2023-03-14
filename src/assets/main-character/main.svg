@@ -1,0 +1,18 @@
+<svg width="35" height="44" viewBox="0 0 35 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="2.5" y="7.5" width="2" height="36" fill="#D9D9D9" stroke="#5D5D5D"/>
+<line x1="3.5" y1="7" x2="3.5" stroke="#5D5D5D"/>
+<path d="M27.5586 27.5L28.9279 38.4545L23.0383 38.0015L22.9455 37.9943L22.8563 38.0211L17.9833 39.483L11.6124 38.0128L11.5774 38.0047L11.5415 38.0017L6.11513 37.5495L8.39911 27.5H27.5586Z" fill="#D9D9D9" stroke="#5D5D5D"/>
+<circle cx="17.5" cy="18.5" r="17" fill="url(#paint0_radial_5_731)"/>
+<circle cx="17.5" cy="18.5" r="17" fill="url(#paint1_diamond_5_731)" fill-opacity="0.2"/>
+<circle cx="17.5" cy="18.5" r="17" stroke="#5E5E5E"/>
+<defs>
+<radialGradient id="paint0_radial_5_731" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17.5 18.5) rotate(90) scale(17.5)">
+<stop stop-color="white"/>
+<stop offset="0.838542" stop-color="#CCC3C3"/>
+</radialGradient>
+<radialGradient id="paint1_diamond_5_731" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17.5 18.5) rotate(90) scale(17.5)">
+<stop stop-color="#434343"/>
+<stop offset="1" stop-color="#999999"/>
+</radialGradient>
+</defs>
+</svg>

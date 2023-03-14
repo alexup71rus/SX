@@ -1,4 +1,4 @@
-import { Game, Types, AUTO } from 'phaser'
+import {Game, Types, AUTO, CANVAS} from 'phaser'
 import { PreloadScene } from './scenes/PreloadScene'
 import { GameScene } from './scenes/GameScene'
 import gameConfig from './gameConfig'
@@ -10,7 +10,7 @@ declare global {
 }
 
 const config: Types.Core.GameConfig = {
-  type: AUTO,
+  type: CANVAS,
   width: gameConfig.screenWidth,
   height: gameConfig.screenHeight,
   backgroundColor: gameConfig.backgroundColor,
