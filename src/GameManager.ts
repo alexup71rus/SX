@@ -14,7 +14,16 @@ export default class GameManager {
     async createPlayer(x: number, y: number) {
         this._player = new Player(this._scene, {x: x, y: y})
 
+        console.log(this._player)
         return this._player
+    }
+
+    async playerAttack() {
+        return this._player.attack()
+    }
+
+    async playerJump() {
+        return this._player.jump()
     }
 
     // playerMove(speedX: number, speedY: number) {

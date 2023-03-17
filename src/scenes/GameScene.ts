@@ -2,6 +2,7 @@ import { Scene } from 'phaser'
 import gameConfig from "../gameConfig";
 import Map = Phaser.Structs.Map;
 import GameManager from "../GameManager";
+import Player from "../Player/Player";
 
 type SceneCreateProps = {
   isRestart?: boolean
@@ -34,6 +35,10 @@ export class GameScene extends Scene {
   private joystickVelocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2()
   private bottomPanelButtons: Map<any, any>
   private keysLocked: boolean
+
+  // игрок
+  private player: Player
+  private magicPlayerActions: { [K: string]: Function }
 
   renderBottomPanel = async () => {
     const bottomMargin = 30;
@@ -200,45 +205,73 @@ export class GameScene extends Scene {
 
       btn.on('pointerdown', () => {
         const delayIsTrue = this.tweenButton(btnKey)
+
+        if (delayIsTrue) {
+          this.playerAction(btnKey)
+        }
       })
     });
+
+    ['UP', 'DOWN', 'LEFT', 'RIGHT'].forEach(inputCode => {
+      this.input.keyboard.on('keydown-' + inputCode, () => {
+        const action = this.getPlayerAction(inputCode)
+        const delayIsTrue = this.tweenButton(action.name)
+
+        if (delayIsTrue) {
+          const didAction = this.playerAction(inputCode)
+        }
+      });
+    })
   }
 
-  getKeyButtonCode(inputCode: string): string {
-    let _return = ''
+  playerAction(code: string) {
+    return this.getPlayerAction(code).action()
+  }
+
+  getPlayerAction(inputCode: string): any {
+    let _return = {'name': '', 'action': () => {
+        console.error('Нет такого действия');
+      }}
 
     switch (inputCode) {
+      case 'jump':
       case 'UP':
       case 'ArrowUp':
-        _return = 'jump';
+        _return = {
+          'name': 'jump',
+          'action': this._gameManager.playerJump.bind(this._gameManager)
+        };
         break;
 
+      case 'block':
       case 'DOWN':
       case 'ArrowDown':
-        _return = 'block';
+        _return = {
+          'name': 'block',
+          'action': this._gameManager.playerAttack.bind(this._gameManager)
+        };
         break;
 
+      case 'kunai':
       case 'LEFT':
       case 'ArrowLeft':
-        _return = 'kunai';
+        _return = {
+          'name': 'kunai',
+          'action': this._gameManager.playerAttack.bind(this._gameManager)
+        };
         break;
 
+      case 'attack':
       case 'RIGHT':
       case 'ArrowRight':
-        _return = 'attack';
+        _return = {
+          'name': 'attack',
+          'action': this._gameManager.playerAttack.bind(this._gameManager)
+        };
         break;
     }
 
     return _return
-  }
-
-  handlerKeysBottomPanel() {
-    ['UP', 'DOWN', 'LEFT', 'RIGHT'].forEach(inputCode => {
-      this.input.keyboard.on('keydown-' + inputCode, () => {
-        const btnKey = this.getKeyButtonCode(inputCode)
-        const delayIsTrue = this.tweenButton(btnKey)
-      });
-    })
   }
 
   onStartGame = async () => {
@@ -283,9 +316,12 @@ export class GameScene extends Scene {
   }
 
   async spawnPlayer() {
-    let player = await this._gameManager.createPlayer(this.gameWidth / 2, this.gameHeight - (100 * gameConfig.scaleRange))
+    this.player = await this._gameManager.createPlayer(this.gameWidth / 2, this.gameHeight - (100 * gameConfig.scaleRange))
+    this.player.setMask(this.gameSceneShape.createGeometryMask())
 
-    player.setMask(this.gameSceneShape.createGeometryMask())
+    this.magicPlayerActions = {
+
+    }
   }
 
   async resizeGameWindow() {
@@ -324,7 +360,6 @@ export class GameScene extends Scene {
 
   initEvents() {
     this.handlerBottomPanel()
-    this.handlerKeysBottomPanel()
     this.handlerJoystick()
   }
 
