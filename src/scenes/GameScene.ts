@@ -1,400 +1,60 @@
 import { Scene } from 'phaser'
 import gameConfig from "../gameConfig";
 import Map = Phaser.Structs.Map;
-import GameManager from "../GameManager";
-import Player from "../Player/Player";
+import FPS from "../FPS/FPS";
+import PlayerController from "../Player/PlayerController";
 
 type SceneCreateProps = {
-  isRestart?: boolean
+  isRestart?: boolean,
+  isSceneStarted?: boolean,
 }
+
+const sceneName = 'GameScene'
 
 export class GameScene extends Scene {
   // размер холста
-  private gameWidth: number
-  private gameHeight: number
-  private inputBarHeight: number
+  readonly gameWidth: number = gameConfig.screenWidth
+  readonly gameHeight: number = gameConfig.screenHeight - (160 * gameConfig.scaleRange)
+  readonly inputBarHeight: number = gameConfig.screenHeight - (gameConfig.screenHeight - (160 * gameConfig.scaleRange))
 
-  // game manager
-  private _isSceneStarted: boolean = false
-  private _gameManager: GameManager
+  // графика
+  public graphics: any
+  public gameSceneShape: any
+  public backgroundSprite: any
 
-  // отрисовка
-  private _time: any = {
-    prev: 0,
-    fps: 0,
-    fpsText: Text,
-  }
-  private graphics: any
-  private gameSceneShape: any
-  private backgroundSprite: any
+  // игровые объекты
+  public collectGameObjects: Map<any, any>
 
-  // ввод
-  private _playerSpeed: number = 60 * gameConfig.scaleRange
-  private joystickDefaultPosition = {x: 0, y: 0}
-  private joystickPosition = {x: 0, y: 0}
-  private joystickVelocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2()
-  private moveForce: number
-  private stopSone: number
-  private bottomPanelButtons: Map<any, any>
-  private keysLocked: boolean
+  // логика сцены
+  public _isSceneStarted: boolean = false
 
-  // игрок
-  private player: Player
-  private magicPlayerActions: { [K: string]: Function }
-
-  renderBottomPanel = async () => {
-    const bottomMargin = 30;
-    this.bottomPanelButtons = new Map([]);
-
-    // buttons
-    this.bottomPanelButtons.set('attack',
-        this.add.sprite(
-            this.gameWidth - (57 * gameConfig.scaleRange),
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 38) * gameConfig.scaleRange),
-            'btn-attack'
-        )
-    )
-    this.setButtonDelay('attack', 300)
-    this.bottomPanelButtons.set('jump',
-        this.add.sprite(
-            this.gameWidth - (57 * gameConfig.scaleRange),
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 84) * gameConfig.scaleRange),
-            'btn-jump'
-        )
-    )
-    this.setButtonDelay('jump', 600)
-    this.bottomPanelButtons.set('block',
-        this.add.sprite(
-            this.gameWidth - (152 * gameConfig.scaleRange),
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 38) * gameConfig.scaleRange),
-            'btn-block'
-        )
-    )
-    this.setButtonDelay('block', 150)
-    this.bottomPanelButtons.set('kunai',
-        this.add.sprite(
-            this.gameWidth - (152 * gameConfig.scaleRange),
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 88) * gameConfig.scaleRange),
-            'btn-kunai'
-        )
-    )
-    this.setButtonDelay('kunai', 100)
-
-    // joystick
-    this.bottomPanelButtons.set('joystick-place',
-        this.add.sprite(
-            (82 * gameConfig.scaleRange),
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 63) * gameConfig.scaleRange),
-            'joystick-bg'
-        )
-    )
-    this.bottomPanelButtons.set('joystick-point',
-        this.add.sprite(
-            82 * gameConfig.scaleRange,
-            this.gameHeight + this.inputBarHeight - ((bottomMargin + 63) * gameConfig.scaleRange),
-            'joystick-stick'
-        )
-    )
-
-    this.bottomPanelButtons.get('joystick-point').setInteractive();
-    this.input.setDraggable(this.bottomPanelButtons.get('joystick-point'))
-    this.joystickDefaultPosition = {
-      x: this.bottomPanelButtons.get('joystick-point').x,
-      y: this.bottomPanelButtons.get('joystick-point').y
-    }
+  async onRestartGame() {
+    this.scene.restart({ isRestart: true })
   }
 
-
-  getJoystickForceX(joystickX: integer, force: number, stopSone: number) {
-    if (joystickX > stopSone) {
-      return 1 + force
-    } else if (joystickX < -stopSone) {
-      return -1 - force
-    }
-
-    return 0;
+  constructor() {
+    super(sceneName)
   }
 
-  getJoystickForceY(joystickY: integer, force: number, stopSone: number) {
-    if (joystickY > stopSone) {
-      return 1 + force
-    } else if (joystickY < -stopSone) {
-      return -1 - force
-    }
-
-    return 0;
-  }
-
-  onUpdateJoystick(angle: integer, distance: integer) {
-    this.joystickVelocity.setToPolar(angle, distance);
-    this.joystickVelocity.x = this.getJoystickForceX(this.joystickVelocity.x, this.moveForce, this.stopSone)
-    this.joystickVelocity.y = this.getJoystickForceY(this.joystickVelocity.y, this.moveForce, this.stopSone)
-  }
-
-  private _moveKeys: Map<any, any>
-  private _moveKeysPressed: Map<any, any>
-
-  handlerKeyboardMove() {
-    this._moveKeys = new Map([]);
-    this._moveKeysPressed = new Map([]);
-
-    ['W', 'A', 'S', 'D'].forEach(inputCode => {
-      if (inputCode === 'W' || inputCode === 'A') {
-        this._moveKeys.set(inputCode, {
-          dir: inputCode === 'W' ? 'y' : 'x',
-          force: -1 - this.moveForce
-        })
-      } else if (inputCode === 'S' || inputCode === 'D') {
-        this._moveKeys.set(inputCode, {
-          dir: inputCode === 'S' ? 'y' : 'x',
-          force: 1 + this.moveForce
-        })
-      }
-
-      this.input.keyboard.on('keydown-' + inputCode, () => {
-        const key = this._moveKeys.get(inputCode)
-
-        this._moveKeysPressed.set(inputCode, key)
-
-        key.dir === 'x'
-            ? this.joystickVelocity.x = key.force
-            : this.joystickVelocity.y = key.force
-      });
-      this.input.keyboard.on('keyup-' + inputCode, () => {
-        switch (inputCode) {
-          case 'W':
-            this.joystickVelocity.y = this._moveKeysPressed.get('S') !== undefined ? this.joystickVelocity.y : 0
-            break;
-          case 'A':
-            this.joystickVelocity.x = this._moveKeysPressed.get('D') !== undefined ? this.joystickVelocity.x : 0
-            break;
-          case 'S':
-            this.joystickVelocity.y = this._moveKeysPressed.get('W') !== undefined ? this.joystickVelocity.y : 0
-            break;
-          case 'D':
-            this.joystickVelocity.x = this._moveKeysPressed.get('A') !== undefined ? this.joystickVelocity.x : 0
-            break;
-        }
-
-        this._moveKeysPressed.delete(inputCode)
-      });
-    })
-  }
-
-  onDragJoystick(pointer: any) {
-    const joystick = this.bottomPanelButtons.get('joystick-point');
-    const radius = 40 * gameConfig.scaleRange
-    const angle = Phaser.Math.Angle.Between(
-        this.joystickDefaultPosition.x,
-        this.joystickDefaultPosition.y,
-        pointer.x,
-        pointer.y
-    )
-    const distance = Phaser.Math.Distance.Between(
-        this.joystickDefaultPosition.x,
-        this.joystickDefaultPosition.y,
-        pointer.x,
-        pointer.y
-    )
-
-    if (distance > radius) {
-      joystick.x = this.joystickDefaultPosition.x + (radius * Math.cos(angle))
-      joystick.y = this.joystickDefaultPosition.y + (radius * Math.sin(angle))
-    } else {
-      joystick.x = pointer.x
-      joystick.y = pointer.y
-    }
-
-    this.onUpdateJoystick(angle, distance)
-  }
-
-  onDragEndJoystick(pointer: any) {
-    const joystick = this.bottomPanelButtons.get('joystick-point');
-
-    joystick.x = this.joystickDefaultPosition.x
-    joystick.y = this.joystickDefaultPosition.y
-
-    this.onUpdateJoystick(0, 0)
-  }
-
-  handlerJoystick() {
-    this.bottomPanelButtons.get('joystick-point').on('pointerdown', this.onDragJoystick.bind(this))
-    this.bottomPanelButtons.get('joystick-point').on('drag', this.onDragJoystick.bind(this))
-    this.bottomPanelButtons.get('joystick-point').on('dragend', this.onDragEndJoystick.bind(this))
-  }
-
-  setButtonDelay(name: string, delay: integer) {
-    this.bottomPanelButtons.get(name).pointerDelay = delay
-  }
-
-  tweenButton(btnKey: string): boolean {
-    const btn = this.bottomPanelButtons.get(btnKey)
-    const tapDelay = 10
-
-    if (!this.keysLocked) {
-      this.keysLocked = true
-      setTimeout(() => this.keysLocked = false, btn.pointerDelay + tapDelay)
-
-      this.tweens.add({
-        targets: btn,
-        scale: (1 + .15) * gameConfig.scaleRange,
-        duration: (btn.pointerDelay / 2),
-        ease: 'Power1',
-        yoyo: true
-      })
-
-      return true
-    }
-
-    return false
-  }
-
-  handlerBottomPanel() {
-    ['attack', 'jump', 'block', 'kunai'].forEach(btnKey => {
-      const btn = this.bottomPanelButtons.get(btnKey).setInteractive();
-
-      btn.on('pointerdown', () => {
-        const delayIsTrue = this.tweenButton(btnKey)
-
-        if (delayIsTrue) {
-          this.playerAction(btnKey)
-        }
-      })
-    });
-
-    ['UP', 'DOWN', 'LEFT', 'RIGHT'].forEach(inputCode => {
-      this.input.keyboard.on('keydown-' + inputCode, () => {
-        const action = this.getPlayerAction(inputCode)
-        const delayIsTrue = this.tweenButton(action.name)
-
-        if (delayIsTrue) {
-          const didAction = this.playerAction(inputCode)
-        }
-      });
-    })
-  }
-
-  playerAction(code: string) {
-    return this.getPlayerAction(code).action()
-  }
-
-  getPlayerAction(inputCode: string): any {
-    let _return = {'name': '', 'action': () => {
-        console.error('Нет такого действия');
-      }}
-
-    switch (inputCode) {
-      case 'jump':
-      case 'UP':
-      case 'ArrowUp':
-        _return = {
-          'name': 'jump',
-          'action': this._gameManager.playerJump.bind(this._gameManager)
-        };
-        break;
-
-      case 'block':
-      case 'DOWN':
-      case 'ArrowDown':
-        _return = {
-          'name': 'block',
-          'action': this._gameManager.playerAttack.bind(this._gameManager)
-        };
-        break;
-
-      case 'kunai':
-      case 'LEFT':
-      case 'ArrowLeft':
-        _return = {
-          'name': 'kunai',
-          'action': this._gameManager.playerAttack.bind(this._gameManager)
-        };
-        break;
-
-      case 'attack':
-      case 'RIGHT':
-      case 'ArrowRight':
-        _return = {
-          'name': 'attack',
-          'action': this._gameManager.playerAttack.bind(this._gameManager)
-        };
-        break;
-    }
-
-    return _return
-  }
-
-  onStartGame = async () => {
-    this._gameManager = new GameManager(this.scene.get('GameScene'))
-    this.gameWidth = gameConfig.screenWidth;
-    this.gameHeight = gameConfig.screenHeight - (160 * gameConfig.scaleRange);
-    this.inputBarHeight = gameConfig.screenHeight - this.gameHeight;
-    this.stopSone = 15 * gameConfig.scaleRange
-    this.moveForce = 2 * gameConfig.scaleRange
+  public create({ isRestart }: SceneCreateProps) {
     this.graphics = this.add.graphics();
-    this.input.addPointer(2);
 
-    await this.renderBottomPanel()
     this.drawScene()
-    await this.spawnPlayer()
-    this.initEvents()
-    this.showFps()
+    this.initControllers()
+    this.startControllers()
+    this.bindEvents()
     this.resizeGameWindow()
 
     this._isSceneStarted = true
   }
 
-  showFps() {
-    const textStyle = {
-      fontFamily: 'Arial',
-      fontSize: ''+ (8 * gameConfig.scaleRange)+'px',
-      color: '#ffffff'
-    };
-
-    this._time.prev = 0;
-    this._time.fps = 0;
-    this._time.fpsText = this.add.text(20 * gameConfig.scaleRange, 20 * gameConfig.scaleRange, 'FPS:', textStyle);
-  }
-
-  updateFps(time: number) {
-    if (this._isSceneStarted) {
-      // Рассчитываем количество кадров в секунду
-      this._time.fps = 1000 / (time - this._time.prev);
-      this._time.prev = time;
-
-      // Обновляем текст с количеством кадров в секунду
-      this._time.fpsText.setText('FPS: ' + Math.round(this._time.fps));
-    }
-  }
-
-  async spawnPlayer() {
-    this.player = await this._gameManager.createPlayer(this.gameWidth / 2, this.gameHeight - (200 * gameConfig.scaleRange))
-    this.player.setMask(this.gameSceneShape.createGeometryMask())
-
-    this.magicPlayerActions = {
-
-    }
-  }
-
-  async resizeGameWindow() {
+  public resizeGameWindow() {
     this.children.list.forEach((child: any) => {
       child.setScale(gameConfig.scaleRange)
     });
   }
 
-  onRestartGame = () => {
-    this.scene.restart({ isRestart: true })
-  }
-
-  constructor() {
-    super('GameScene')
-  }
-
-  async create({ isRestart }: SceneCreateProps) {
-    this.onStartGame()
-  }
-
-  drawScene() {
+  private drawScene() {
     this.gameSceneShape = this.make.graphics({})
     this.backgroundSprite = this.add.image((this.gameWidth / 2), this.gameHeight / 2, 'scene1')
 
@@ -410,22 +70,27 @@ export class GameScene extends Scene {
     this.backgroundSprite.setMask(this.gameSceneShape.createGeometryMask())
   }
 
-  initEvents() {
-    this.handlerBottomPanel()
-    this.handlerJoystick()
-    this.handlerKeyboardMove()
+  private startControllers() {
+    this.collectGameObjects.get('fps').showFps()
+    this.collectGameObjects.get('player').create()
   }
 
-  updatePlayer(time: number, delta: number) {
-    if (!this._isSceneStarted) return false
+  private initControllers() {
+    this.collectGameObjects = new Map([])
 
-    this._gameManager.playerMove(time, delta, this._playerSpeed, this.joystickVelocity)
+    this.collectGameObjects.set('fps', new FPS(this.scene.get(sceneName)))
+    this.collectGameObjects.set('player', new PlayerController(this))
   }
 
-  update(time: number, delta: number) {
+  private bindEvents() {
+  }
+
+  public update(time: number, delta: number) {
     super.update(time, delta)
 
-    this.updateFps(time)
-    this.updatePlayer(time, delta)
+    if (this._isSceneStarted) {
+      this.collectGameObjects.get('fps').updateFps(time)
+      this.collectGameObjects.get('player').update(time, delta)
+    }
   }
 }

@@ -5,7 +5,7 @@ import gameConfig from "../gameConfig";
 type PlayerPositionStart = { x: number, y: number }
 type PlayerProps = PlayerPositionStart
 
-export default class Player extends GameObjects.Sprite
+export default class PlayerSprite extends GameObjects.Sprite
 {
     private sprite: Sprite
     private _health = 2
@@ -110,11 +110,27 @@ export default class Player extends GameObjects.Sprite
         return this.playAnimation('idle')
     }
 
+    swing() {
+        return this.playAnimation('swing')
+    }
+
     attack() {
         return this.playAnimation('attack')
     }
 
+    parry() {
+        return this.playAnimation('parry')
+    }
+
+    block() {
+        return this.playAnimation('block')
+    }
+
     jump() {
+        return this.playAnimation('jump')
+    }
+
+    kunai() {
         return this.playAnimation('jump')
     }
 }
