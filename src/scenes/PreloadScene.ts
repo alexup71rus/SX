@@ -14,7 +14,7 @@ export class PreloadScene extends Scene {
     this.load.svg('joystick-stick', '../assets/inteface/bottom-panel/joystick/stick.svg')
 
     // scene
-    this.load.svg('scene1', '../assets/loc-start/bg.svg')
+    this.load.svg('scene1', '../assets/loc-start/grass-green.svg')
 
     // player
     this.load.spritesheet('player', '../assets/main-character/main.svg', {

@@ -29,10 +29,12 @@ export class GameScene extends Scene {
   private backgroundSprite: any
 
   // ввод
-  private _playerSpeed: number = 50 * gameConfig.scaleRange
+  private _playerSpeed: number = 60 * gameConfig.scaleRange
   private joystickDefaultPosition = {x: 0, y: 0}
   private joystickPosition = {x: 0, y: 0}
   private joystickVelocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2()
+  private moveForce: number
+  private stopSone: number
   private bottomPanelButtons: Map<any, any>
   private keysLocked: boolean
 
@@ -60,7 +62,7 @@ export class GameScene extends Scene {
             'btn-jump'
         )
     )
-    this.setButtonDelay('jump', 300)
+    this.setButtonDelay('jump', 600)
     this.bottomPanelButtons.set('block',
         this.add.sprite(
             this.gameWidth - (152 * gameConfig.scaleRange),
@@ -124,11 +126,59 @@ export class GameScene extends Scene {
   }
 
   onUpdateJoystick(angle: integer, distance: integer) {
-    const force = 2 * gameConfig.scaleRange
-    const stopSone = 15 * gameConfig.scaleRange
     this.joystickVelocity.setToPolar(angle, distance);
-    this.joystickVelocity.x = this.getJoystickForceX(this.joystickVelocity.x, force, stopSone)
-    this.joystickVelocity.y = this.getJoystickForceY(this.joystickVelocity.y, force, stopSone)
+    this.joystickVelocity.x = this.getJoystickForceX(this.joystickVelocity.x, this.moveForce, this.stopSone)
+    this.joystickVelocity.y = this.getJoystickForceY(this.joystickVelocity.y, this.moveForce, this.stopSone)
+  }
+
+  private _moveKeys: Map<any, any>
+  private _moveKeysPressed: Map<any, any>
+
+  handlerKeyboardMove() {
+    this._moveKeys = new Map([]);
+    this._moveKeysPressed = new Map([]);
+
+    ['W', 'A', 'S', 'D'].forEach(inputCode => {
+      if (inputCode === 'W' || inputCode === 'A') {
+        this._moveKeys.set(inputCode, {
+          dir: inputCode === 'W' ? 'y' : 'x',
+          force: -1 - this.moveForce
+        })
+      } else if (inputCode === 'S' || inputCode === 'D') {
+        this._moveKeys.set(inputCode, {
+          dir: inputCode === 'S' ? 'y' : 'x',
+          force: 1 + this.moveForce
+        })
+      }
+
+      this.input.keyboard.on('keydown-' + inputCode, () => {
+        const key = this._moveKeys.get(inputCode)
+
+        this._moveKeysPressed.set(inputCode, key)
+
+        key.dir === 'x'
+            ? this.joystickVelocity.x = key.force
+            : this.joystickVelocity.y = key.force
+      });
+      this.input.keyboard.on('keyup-' + inputCode, () => {
+        switch (inputCode) {
+          case 'W':
+            this.joystickVelocity.y = this._moveKeysPressed.get('S') !== undefined ? this.joystickVelocity.y : 0
+            break;
+          case 'A':
+            this.joystickVelocity.x = this._moveKeysPressed.get('D') !== undefined ? this.joystickVelocity.x : 0
+            break;
+          case 'S':
+            this.joystickVelocity.y = this._moveKeysPressed.get('W') !== undefined ? this.joystickVelocity.y : 0
+            break;
+          case 'D':
+            this.joystickVelocity.x = this._moveKeysPressed.get('A') !== undefined ? this.joystickVelocity.x : 0
+            break;
+        }
+
+        this._moveKeysPressed.delete(inputCode)
+      });
+    })
   }
 
   onDragJoystick(pointer: any) {
@@ -279,6 +329,8 @@ export class GameScene extends Scene {
     this.gameWidth = gameConfig.screenWidth;
     this.gameHeight = gameConfig.screenHeight - (160 * gameConfig.scaleRange);
     this.inputBarHeight = gameConfig.screenHeight - this.gameHeight;
+    this.stopSone = 15 * gameConfig.scaleRange
+    this.moveForce = 2 * gameConfig.scaleRange
     this.graphics = this.add.graphics();
     this.input.addPointer(2);
 
@@ -316,7 +368,7 @@ export class GameScene extends Scene {
   }
 
   async spawnPlayer() {
-    this.player = await this._gameManager.createPlayer(this.gameWidth / 2, this.gameHeight - (100 * gameConfig.scaleRange))
+    this.player = await this._gameManager.createPlayer(this.gameWidth / 2, this.gameHeight - (200 * gameConfig.scaleRange))
     this.player.setMask(this.gameSceneShape.createGeometryMask())
 
     this.magicPlayerActions = {
@@ -361,6 +413,7 @@ export class GameScene extends Scene {
   initEvents() {
     this.handlerBottomPanel()
     this.handlerJoystick()
+    this.handlerKeyboardMove()
   }
 
   updatePlayer(time: number, delta: number) {

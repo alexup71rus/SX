@@ -11,10 +11,14 @@ export default class GameManager {
         this._isGameOver = false
     }
 
+    async createControls() {
+
+    }
+
     async createPlayer(x: number, y: number) {
         this._player = new Player(this._scene, {x: x, y: y})
+        this._player.start();
 
-        console.log(this._player)
         return this._player
     }
 
@@ -26,7 +30,6 @@ export default class GameManager {
         return this._player.jump()
     }
 
-    // playerMove(speedX: number, speedY: number) {
     playerMove(time: number, delta: number, speed: number, velocity: Phaser.Math.Vector2) {
         let playerSpeedDelta = speed * (delta / 1000);
         let speedX: number = 0
