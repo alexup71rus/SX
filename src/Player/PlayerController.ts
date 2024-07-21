@@ -7,7 +7,7 @@ import Joystick from "./Joystick";
 
 export default class PlayerController {
   private playerSprite: PlayerSprite;
-  private readonly _bottomPanelMargin: number = 30;
+  private readonly _bottomPanelMargin: number = 0;
   private readonly joystickVelocity: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
   private readonly speed: number = 60 * gameConfig.scaleRange;
   private joystick: Joystick;
@@ -24,30 +24,40 @@ export default class PlayerController {
     if (interactive) button.setInteractive();
     this.bottomPanelButtons.set(name, button);
     this.setButtonDelay(name, delay);
+    this._scene.uiContainer.add(button);
+  }
+
+  getGraphicsObject() {
+    return this.bottomPanelButtons.values();
   }
 
   renderBottomPanel() {
-    // Создание кнопок на нижней панели
-    this.createButton('attack', this._scene.gameWidth - 57 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 38) * gameConfig.scaleRange, 'btn-attack', 300);
-    this.createButton('jump', this._scene.gameWidth - 57 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 84) * gameConfig.scaleRange, 'btn-jump', 600);
-    this.createButton('block', this._scene.gameWidth - 152 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 38) * gameConfig.scaleRange, 'btn-block', 150);
-    this.createButton('kunai', this._scene.gameWidth - 152 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 88) * gameConfig.scaleRange, 'btn-kunai', 100);
-    this.createButton('joystick-place', 82 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 63) * gameConfig.scaleRange, 'joystick-bg', 0, false);
-    this.createButton('joystick-point', 82 * gameConfig.scaleRange, this._scene.gameHeight + this._scene.inputBarHeight - (this._bottomPanelMargin + 63) * gameConfig.scaleRange, 'joystick-stick', 0);
+    this.createButton('attack', gameConfig.screenWidth / gameConfig.scaleRange  - 57, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 38), 'btn-attack', 300);
+    this.createButton('jump', gameConfig.screenWidth / gameConfig.scaleRange - 57, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 84), 'btn-jump', 600);
+    this.createButton('block', gameConfig.screenWidth / gameConfig.scaleRange - 152, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 38), 'btn-block', 150);
+    this.createButton('kunai', gameConfig.screenWidth / gameConfig.scaleRange - 152, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 88), 'btn-kunai', 100);
+    this.createButton('joystick-place', 82, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 63), 'joystick-bg', 0, false);
+    this.createButton('joystick-point', 82, gameConfig.screenHeight / gameConfig.scaleRange - (this._bottomPanelMargin + 63), 'joystick-stick', 0);
   }
 
   createGameController() {
     this.renderBottomPanel();
     this._scene.input.addPointer(2);
-    this._scene.input.setDraggable(this.bottomPanelButtons.get('joystick-point')!);
+    const joystickPoint = this.bottomPanelButtons.get('joystick-point');
+    if (joystickPoint) {
+      this._scene.input.setDraggable(joystickPoint);
+    } else {
+      console.error('Joystick point not found');
+    }
 
-    // Добавление взаимодействия для кнопок
     const buttonActions = ['attack', 'jump', 'block', 'kunai'];
     buttonActions.forEach(action => {
       const button = this.bottomPanelButtons.get(action);
       if (button) {
         button.on("pointerdown", () => this.playerAction(action, "down"));
         button.on("pointerup", () => this.playerAction(action, "up"));
+      } else {
+        console.error(`Button ${action} not found`);
       }
     });
   }
@@ -73,7 +83,6 @@ export default class PlayerController {
       this.joystick.handlerJoystick(joystickPoint, this.joystickVelocity);
     }
 
-    // Добавление событий клавиатуры для способностей
     const abilities = ["attack", "jump", "block", "kunai"];
     const keysForAbilities = ["RIGHT", "UP", "DOWN", "LEFT"];
     const keyboard = this._scene.input.keyboard;
@@ -85,7 +94,6 @@ export default class PlayerController {
         keyboard.on(`keyup-${key}`, () => this.playerAction(ability, "up"));
       });
 
-      // Добавление клавиш для движения
       const movementKeys = ["W", "A", "S", "D"];
       movementKeys.forEach(key => {
         keyboard.on(`keydown-${key}`, () => this.playerAction(key, "down"));
@@ -133,7 +141,7 @@ export default class PlayerController {
 
     this._scene.tweens.add({
       targets: btn,
-      scale: (1 + 0.15) * gameConfig.scaleRange,
+      scale: (1 + 0.15),
       duration: delay,
       ease: "Power1",
       yoyo: true,
@@ -218,7 +226,6 @@ export default class PlayerController {
     return action;
   }
 
-  // Возвращает текущую позицию игрока
   getPlayerPosition(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2(this.playerSprite.x, this.playerSprite.y);
   }
