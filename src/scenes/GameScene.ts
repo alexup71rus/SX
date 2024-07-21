@@ -91,6 +91,9 @@ export class GameScene extends Scene {
     if (this._isSceneStarted) {
       this.collectGameObjects.get('fps').updateFps(time)
       this.collectGameObjects.get('player').update(time, delta)
+      this.cameras.main.startFollow(
+        this.collectGameObjects.get('player').getPlayerPosition(), true, 0.1, 0.1
+      );
     }
   }
 }

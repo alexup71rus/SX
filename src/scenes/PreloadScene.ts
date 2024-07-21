@@ -17,9 +17,9 @@ export class PreloadScene extends Scene {
     this.load.svg('scene1', '../assets/loc-start/grass-green.svg')
 
     // player
-    this.load.spritesheet('player', '../assets/main-character/main.svg', {
-      frameWidth: 200,
-      frameHeight: 200,
+    this.load.spritesheet('player', '../assets/characters/main.svg', {
+      frameWidth: 32,
+      frameHeight: 32,
       startFrame: 0
     })
   }

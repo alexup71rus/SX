@@ -1,56 +1,64 @@
-import {Scene} from "phaser";
+import { Scene } from "phaser";
 
-export default class Keyboard
-{
-    private moveKeys: Map<any, any>
-    private moveKeysPressed: Map<any, any>
+type MoveKeyConfig = {
+    dir: 'x' | 'y';
+    force: number;
+};
 
-    constructor(private _scene: Scene) {}
+export default class Keyboard {
+    private moveKeys: Map<string, MoveKeyConfig>;
+    private moveKeysPressed: Map<string, MoveKeyConfig>;
+
+    constructor(private _scene: Scene) {
+        this.moveKeys = new Map<string, MoveKeyConfig>();
+        this.moveKeysPressed = new Map<string, MoveKeyConfig>();
+    }
 
     handlerKeyboardMove(joystickVelocity: Phaser.Math.Vector2) {
-        this.moveKeys = new Map([]);
-        this.moveKeysPressed = new Map([]);
+        const movementKeys = ['W', 'A', 'S', 'D'];
+        movementKeys.forEach(inputCode => {
+            const keyboard = this._scene.input.keyboard;
+            const config: MoveKeyConfig = {
+                dir: inputCode === 'W' || inputCode === 'S' ? 'y' : 'x',
+                force: inputCode === 'W' || inputCode === 'A' ? -1 : 1
+            };
+            this.moveKeys.set(inputCode, config);
 
-        ['W', 'A', 'S', 'D'].forEach(inputCode => {
-            if (inputCode === 'W' || inputCode === 'A') {
-                this.moveKeys.set(inputCode, {
-                    dir: inputCode === 'W' ? 'y' : 'x',
-                    force: -1
-                })
-            } else if (inputCode === 'S' || inputCode === 'D') {
-                this.moveKeys.set(inputCode, {
-                    dir: inputCode === 'S' ? 'y' : 'x',
-                    force: 1
-                })
+            if (keyboard) {
+                keyboard.on('keydown-' + inputCode, () => this.onKeyDown(inputCode, joystickVelocity));
+                keyboard.on('keyup-' + inputCode, () => this.onKeyUp(inputCode, joystickVelocity));
             }
+        });
+    }
 
-            this._scene.input.keyboard.on('keydown-' + inputCode, () => {
-                const key = this.moveKeys.get(inputCode)
+    private onKeyDown(inputCode: string, joystickVelocity: Phaser.Math.Vector2): void {
+        const key = this.moveKeys.get(inputCode);
+        if (key) {
+            this.moveKeysPressed.set(inputCode, key);
+            key.dir === 'x' ? joystickVelocity.x = key.force : joystickVelocity.y = key.force;
+        }
+    }
 
-                this.moveKeysPressed.set(inputCode, key)
+    private onKeyUp(inputCode: string, joystickVelocity: Phaser.Math.Vector2): void {
+        const oppositeKey = this.getOppositeKey(inputCode);
+        if (oppositeKey) {
+            joystickVelocity[oppositeKey.dir] = this.moveKeysPressed.has(oppositeKey.code) ? joystickVelocity[oppositeKey.dir] : 0;
+        }
+        this.moveKeysPressed.delete(inputCode);
+    }
 
-                key.dir === 'x'
-                    ? joystickVelocity.x = key.force
-                    : joystickVelocity.y = key.force
-            });
-            this._scene.input.keyboard.on('keyup-' + inputCode, () => {
-                switch (inputCode) {
-                    case 'W':
-                        joystickVelocity.y = this.moveKeysPressed.get('S') !== undefined ? joystickVelocity.y : 0
-                        break;
-                    case 'A':
-                        joystickVelocity.x = this.moveKeysPressed.get('D') !== undefined ? joystickVelocity.x : 0
-                        break;
-                    case 'S':
-                        joystickVelocity.y = this.moveKeysPressed.get('W') !== undefined ? joystickVelocity.y : 0
-                        break;
-                    case 'D':
-                        joystickVelocity.x = this.moveKeysPressed.get('A') !== undefined ? joystickVelocity.x : 0
-                        break;
-                }
-
-                this.moveKeysPressed.delete(inputCode)
-            });
-        })
+    private getOppositeKey(inputCode: string): { code: string, dir: 'x' | 'y' } | undefined {
+        switch (inputCode) {
+            case 'W':
+                return { code: 'S', dir: 'y' };
+            case 'A':
+                return { code: 'D', dir: 'x' };
+            case 'S':
+                return { code: 'W', dir: 'y' };
+            case 'D':
+                return { code: 'A', dir: 'x' };
+            default:
+                return undefined;
+        }
     }
 }
